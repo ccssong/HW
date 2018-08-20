@@ -1,0 +1,31 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+int main(){
+	int array[10];
+	int i = 0;
+	int even_sum = 0, odd_sum = 0;
+	for(int i = 0; i < 10; i++)
+		array[i] = i;
+
+	int child_pid = fork();
+	if(child_pid == 0){
+		for(i = 0; i < 10; i += 2)
+			even_sum += array[i];
+		exit(even_sum);
+	}
+	else{
+		int status = 0;
+		wait(&status);
+		for(int i = 1; i < 10; i += 2)
+			odd_sum += array[i];
+		even_sum = (status >> 8) & 0xff;
+	}
+	int total_sum = even_sum + odd_sum;
+	printf("total_sum = %d, even_num = %d, odd_num = %d\n", total_sum, even_sum, odd_sum);
+
+	return 0;
+
+}
