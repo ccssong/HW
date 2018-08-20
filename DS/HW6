@@ -1,0 +1,98 @@
+#pragma warning(disable: 4996)
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX 2048
+int count = 0;
+int wordcnt = 0;
+
+int main() {
+	printf("df\n");
+	FILE *finput;
+	FILE *fmap;
+	FILE *foutput;
+	char map[128][2][MAX];
+	char word[128][MAX];
+
+	finput = fopen("input.txt", "r");
+	if (finput == NULL) {
+		printf("file open is not successful\n");
+		return -1;
+	}
+
+	fmap = fopen("map.txt", "r");
+	if (fmap == NULL) {
+		printf("file open is not successful\n");
+		return -1;
+	}
+
+	foutput = fopen("input.out.txt", "wt");
+	if (foutput == NULL) {
+		printf("file create is not successful\n");
+		return -1;
+	}
+
+	while (!feof(fmap)) {
+		char line[MAX];
+		char *str;
+
+		fgets(line, sizeof(line), fmap);
+		if (line[strlen(line)] == '\n')
+			line[strlen(line)] = '\0';
+		printf("line %s\n", line);
+
+
+		str = strtok(line, ": ");
+		strncpy(map[count][0], str, strlen(str));
+		if (map[count][0][strlen(str)] != '\0')
+			map[count][0][strlen(str)] = '\0';
+		printf("size1 %d\n", strlen(map[count][0]));
+
+
+		str = strtok(NULL, ": ");
+		strncpy(map[count][1], str, strlen(str));
+		if (map[count][1][strlen(str)] != '\0')
+			map[count][1][strlen(str)] = '\0';
+		printf("size2 %d\n", strlen(str));
+
+		for (int i = 0; i < 2; i++)
+			printf("%s\n", map[count][i]);
+
+		count++;
+	}
+	printf("\n\n");
+
+	while (!feof(finput)) {
+		char line[MAX];
+		char *ptr;
+
+		fgets(line, sizeof(line), finput);
+		if(line[strlen(line)] == '\n')
+			line[strlen(line)] = '\0';
+		printf("%s\n", line);
+
+		ptr = strtok(line, " ");
+		while (ptr != NULL) {
+			for (int i = 0; i < count; i++) {
+				if (!strcmp(ptr, map[i][0])) {
+					ptr[0]	= '\0';
+					strncpy(ptr, map[i][1], strlen(map[i][1]));
+					ptr[strlen(map[i][1]) - 1] = '\0';
+				}
+			}
+			strncpy(word[wordcnt], ptr, strlen(ptr));
+			word[wordcnt][strlen(ptr)] = '\0';
+			printf("word[%d] %s\n", wordcnt, word[wordcnt]);
+			fprintf(foutput, "%s ", word[wordcnt]);
+			wordcnt++;
+			ptr = strtok(NULL, " ");
+		}
+	//	fprintf(foutput, "\n");
+	}
+
+	fclose(finput);
+	fclose(fmap);
+	fclose(foutput);
+	return 0;
+}
