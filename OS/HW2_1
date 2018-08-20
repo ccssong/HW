@@ -1,0 +1,5 @@
+
+1. Because program created child process by fork() function, we got more messages than the for-loop whose limit is 4.
+2. 15 processes
+3. 15 times. We can know by the number of non-zero child_pid variables.
+4. Because parent processes are terminated first, child processes are disconnected from the existing parent process and the init process whose pid is 1 becomes the parent process.
