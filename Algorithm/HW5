@@ -1,0 +1,370 @@
+#pragma warning(disable: 4996)
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <malloc.h>
+#include <time.h>
+
+
+#define MAX 1024
+#define INF 9999
+#define NUM 10
+
+typedef struct element {
+	int vertex;
+	int distance;
+}element;
+typedef struct queue {
+	element heap[NUM];
+	int heap_size;
+}queue;
+
+enum { Busan = 0, Daegu, Daejeon, Gangeung, Gwangju, Jeonju, Jinju, Pohang, Seoul, Wonju };
+
+int visited[NUM];
+int d[NUM];
+int d_1[NUM][NUM];
+int S[NUM];
+int pred[NUM];
+
+void Dijkstra(int G[NUM][NUM], int s);
+int Bellman_Ford(int G[NUM][NUM], int s);
+void Floyd_Warshall(int G[NUM][NUM]);
+void initQ(queue *Q, int s);
+void sortQ(queue *Q, element v);
+int extract_min(queue *Q);
+void init_single_source(int s);
+void relax(int u, int v, int w[NUM][NUM]);
+void swap(queue *Q, int a, int b);
+
+int main(int argc, char **argv) {
+	FILE *fp;
+	char file_name[128] = "hw5.data";
+	int Adj[NUM][NUM];
+	char name[NUM][MAX];
+	time_t start = 0;
+	time_t end = 0;
+
+	fp = fopen(file_name, "r");
+	if (fp == NULL) {
+		printf("file open is not successful\n");
+		return -1;
+	}
+
+	char blank[MAX];
+	char line[NUM][MAX];
+
+	char *ptr;
+	char *temp;
+	char token[MAX] = "  \t\n";
+
+	fgets(blank, MAX, fp);blank, 
+	temp = strtok(blank, token);
+	strcpy(name[0], temp);
+	for (int i = 1; i < NUM; i++) {
+		temp = strtok(NULL, token);
+		strcpy(name[i], temp);
+	}
+
+
+
+	for (int i = 0; i < NUM; i++)
+		fgets(line[i], MAX, fp);
+
+	for (int i = 0; i < NUM; i++) {
+		temp = strtok(line[i], "\t\t\n ");
+		for (int j = 0; j < NUM; j++) {
+			ptr = strtok(NULL, token);
+			if (strcmp(ptr, "INF") == 0) {
+				Adj[i][j] = INF;
+			}
+			else {
+				int temp = atoi(ptr);
+				if (temp == 0)
+					Adj[i][j] = INF;
+				else
+					Adj[i][j] = atoi(ptr);
+			}
+		}
+	}
+
+
+	printf("\n\n\n\n");
+	printf("\n<Dijkstra>\n               ");
+	for (int i = 0; i< NUM; i++)
+		printf("%-12s", name[i]);
+	printf("\n");
+
+	start = clock();
+	for (int i = 0; i < NUM; i++) {
+		Dijkstra(Adj, i);
+		printf("%9s", name[i]);
+		for (int j = 0; j< NUM; j++)
+			printf("%11d ", d[j]);
+		printf("\n");
+	}
+	end = clock();
+	double time = (double)(end - start) / (CLOCKS_PER_SEC);
+	printf("It took %f seconds to compute shortest path between cities with Dijkstra's algorithm as follows.\n", time);
+
+
+
+
+	printf("\n\n\n\n");
+	printf("\n<Bellman_Ford>\n               ");
+	for (int i = 0; i< NUM; i++)
+		printf("%-12s", name[i]);
+	printf("\n");
+
+	start = clock();
+	for (int i = 0; i < NUM; i++) {
+		int result = Bellman_Ford(Adj, i);
+		if (result == 0) {
+			printf("There is Negative Weight Cycle.\n");
+			break;
+		}
+		printf("%9s", name[i]);
+		for (int j = 0; j< NUM; j++)
+			printf("%11d ", d[j]);
+		printf("\n");
+	}
+	end = clock();
+	time = (double)(end - start) / (CLOCKS_PER_SEC);
+	printf("It took %f seconds to compute shortest path between cities with Bellman Ford algorithm as follows.\n", time);
+
+
+
+	printf("\n\n\n\n");
+	printf("\n<Floyd_Warshall>\n               ");
+	for (int i = 0; i< NUM; i++)
+		printf("%-12s", name[i]);
+	printf("\n");
+	
+	start = clock();
+	Floyd_Warshall(Adj);
+	for (int i = 0; i < NUM; i++) {
+		printf("%9s", name[i]);
+		for (int j = 0; j < NUM; j++) {
+			printf("%11d ", d_1[i][j]);
+		}
+		printf("\n");
+	}
+	end = clock();
+	time = (double)(end - start) / (CLOCKS_PER_SEC);
+	printf("It took %f seconds to compute shortest path between cities with Floyd algorithm as follows.\n", time);
+
+
+	fclose(fp);
+	return 0;
+}
+
+
+int Bellman_Ford(int G[NUM][NUM], int s) {
+	int u = 0;
+	int v = 0;
+	init_single_source(s);
+	
+	for (int i = 0; i < NUM - 1; i++) {
+		for (int k = 0; k < NUM; k++) {
+			u = k;
+			for (int j = 0; j < NUM; j++) {
+				v = j;
+				if (G[u][v] != INF) {
+					relax(u, v, G);
+				}
+			}
+		}
+	}
+
+	for (int i = 0; i < NUM; i++) {
+		u = i;
+		for (int k = 0; k < NUM; k++) {
+			v = k;
+			if (G[u][v] != INF) {
+				if (d[u] > d[v] + G[u][v])	return 0;
+			}
+		}
+	}
+
+	return 1;
+}
+
+
+void Floyd_Warshall(int G[NUM][NUM]) {
+	for (int i = 0; i < NUM; i++) {
+		for (int j = 0; j < NUM; j++) {
+			if (i == j)
+				d_1[i][j] = 0;
+			else
+				d_1[i][j] = INF;
+		}
+	}
+
+	int u = 0;
+	int v = 0;
+	for (int i = 0; i < NUM ; i++) {
+		//row num
+		for (int j = 0; j < NUM - 1; j++) {
+			//iteration
+			for (int m = 0; m < NUM; m++) {
+				u = m;
+				for (int k = 0; k < NUM; k++) {
+					v = k;
+					if (G[u][v] != INF) {
+						if (d_1[i][v] > d_1[i][u] + G[u][v]) {
+							d_1[i][v] = d_1[i][u] + G[u][v];
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+
+
+void Dijkstra(int G[NUM][NUM], int s) {
+	int u = 0;
+	int v = 0;
+	int count = 0;
+	init_single_source(s);
+
+	for (int i = 0; i < NUM; i++) {
+		S[i] = INF;
+	}
+	queue Q;
+	initQ(&Q, s);
+
+	while ((Q.heap_size ) != 0) {
+		u = extract_min(&Q);
+		S[count++] = u;
+		visited[u] = 1;
+		for (int i = 0; i < NUM; i++) {
+			if (visited[i] == 0 && G[u][i] != INF) {
+				v = i;
+				int d_1 = d[v];
+				relax(u, v, G);
+				if (d_1 > d[v]) {
+					element sortv;
+					sortv.vertex = v;
+					sortv.distance = d[v];
+					sortQ(&Q, sortv);
+				}
+			}
+		}
+
+	}
+
+}
+
+
+
+void init_single_source(int s) {
+	for (int i = 0; i < NUM; i++) {
+		visited[i] = 0;
+		d[i] = INF;
+		pred[i] = INF;
+	}
+	d[s] = 0;
+
+}
+
+void relax(int u, int v, int w[NUM][NUM]) {
+	if (d[v] > d[u] + w[u][v]) {
+		d[v] = d[u] + w[u][v];
+		pred[v] = u;
+	}
+}
+
+void initQ(queue *Q, int s) {
+	Q->heap_size = NUM ;
+	for (int i = 0; i < NUM; i++) {
+		Q->heap[i].vertex = i;
+		Q->heap[i].distance = d[i];
+	}
+
+	swap(Q, 0, s);
+	
+}
+
+
+int extract_min(queue *Q) {
+	element item = Q->heap[0];
+	Q->heap_size--;
+	swap(Q, 0, Q->heap_size);
+	
+	int parent = 0;
+	int left = 1;
+	int right = 2;
+	int child = 0;
+	int size = Q->heap_size;
+
+	while (1) {
+		if (left >= size) break;
+		if (right >= size) child = left;
+		else {
+			if (Q->heap[left].distance > Q->heap[right].distance)
+				child = right;
+			else
+				child = left;
+		}
+		if (Q->heap[child].distance < Q->heap[parent].distance) {
+			swap(Q, child, parent);
+			parent = child;
+		}
+		else break;
+
+		left = 2 * parent + 1;
+		right = left + 1;
+	}
+
+	return item.vertex;
+}
+
+
+void sortQ(queue *Q, element v) {
+	int size = Q->heap_size;
+	int idx = 0;
+	for (int i = 0; i < Q->heap_size; i++) {
+		if (Q->heap[i].vertex == v.vertex) {
+			idx = i;
+			Q->heap[idx].distance = v.distance;
+		}
+	}
+
+	int pos = Q->heap_size;
+	int parent = 0;
+	int child = 0;
+	int left = 1;
+	int right = 2;
+
+	if (Q->heap[0].distance > Q->heap[idx].distance) {
+		swap(Q, idx, 0);
+	}
+
+		child = idx;
+		parent = (idx - 1) / 2;
+		while (1) {
+			if (Q->heap[parent].distance > Q->heap[child].distance) {
+				swap(Q, parent, child);
+			}
+			else
+				break;
+			child = parent;
+			parent = (child - 1) / 2;
+		}
+
+	
+	child = 0;
+	left = 1;
+	right = 2;
+	
+}
+
+void swap(queue *Q, int a, int b) {
+	element temp = Q->heap[a];
+	Q->heap[a] = Q->heap[b];
+	Q->heap[b] = temp;
+}
+
