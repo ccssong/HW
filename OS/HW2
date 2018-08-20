@@ -1,0 +1,27 @@
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <stdio.h>
+
+int main(){
+	int i = 0;
+	int limit = 4;
+
+	printf("parent pid = %d\n", getpid());
+	for(int i = 0; i < limit; i++){
+		int child_pid = fork();
+
+		if(child_pid != 0){
+			wait(NULL);
+			continue;
+		}
+		else if(child_pid == 0){
+		printf("%d) pid = %d, ppid = %d, fork() returned %d\n", i, getpid(), getppid(), child_pid);
+		break;
+		}
+	}
+
+
+	return 0;
+}
