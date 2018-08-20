@@ -1,0 +1,92 @@
+// 1. 16∞≥
+// 2. 4kb
+// 3. 53,247bytes
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <malloc.h>
+
+#define BitsForPageNo 4
+#define BitsForPageOffset 12
+
+#define ProcessSize 52018
+
+void init_page_table(int table[], int no_page);
+void to_binary(unsigned short addr, char bit_string[]);
+unsigned short logical2physical(unsigned short logical_addr, int page_table[]);
+
+
+int main(int argc, char **argv) {
+	int no_page = 0;
+	int *page_table = NULL;
+
+	unsigned short logical_addr[] = { 0x071e, 0x0431, 0x21dd, 0x0829, 0x08f0, 0x0ad1, 0x0fb8, 0x0b18, 0x38ab, 0x07a0 };
+
+	int i = 0;
+
+	no_page = 13;
+	page_table = (int *)malloc(no_page * sizeof(int));
+	if (page_table == NULL) {
+		printf("Failed to allocate memort!\n");
+		exit(-1);
+	}
+	init_page_table(page_table, no_page);
+
+
+	for (i = 0; i < 10; i++) {
+		char bits[17];
+		unsigned short physical_addr = logical2physical(logical_addr[i], page_table);
+
+		to_binary(logical_addr[i], bits);
+		printf("0x%04x (%s) ", logical_addr[i], bits);
+
+		to_binary(physical_addr, bits);
+		printf("--> 0x%04x (%s)\n", physical_addr, bits);
+	}
+
+	free(page_table);
+	return 0;
+
+}
+
+
+void init_page_table(int table[], int no_page) {
+	int i = 0;
+
+	for (i = 0; i < no_page; i++)
+		table[i] = i;
+
+	for (i = 0; i < no_page; i++) {
+		int j = (i + (1 << i)) % no_page;
+		int temp = table[i];
+		table[i] = table[j];
+		table[j] = temp;
+	}
+
+}
+
+void to_binary(unsigned short addr, char bit_string[]) {
+	int idx = 0;
+	for (int i = 0; i < 4; i++) {
+		int j = addr & 0xf;
+		addr = addr >> 4;
+		
+		for (int k = 0; k < 4; k++) {
+			bit_string[15 - idx] = (j % 2) + '0';
+			idx++;
+			j = j / 2;
+		}
+	}
+	bit_string[16] = '\0';
+}
+
+unsigned short logical2physical(unsigned short logical_addr, int page_table[]) {
+	int page_offset = logical_addr & 0x0fff;
+	int page_idx = (logical_addr >> 12) & 0x000f;
+	int frame_idx = page_table[page_idx];
+	int physical_addr = (frame_idx << 12) | page_offset;
+
+	return physical_addr;
+}
