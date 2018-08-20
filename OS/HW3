@@ -1,0 +1,102 @@
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <stdio.h>
+#include <string.h>
+#include <pthread.h>
+
+#define BUFF_SIZE	1024
+
+void* receiver(void* );
+void trim(char* );
+
+int repeat = 1;
+
+typedef struct{
+	long data_type;
+	char data_buff[BUFF_SIZE];
+}t_data;
+
+
+int main(int argc, char *argv[]){
+pthread_t tid;
+pthread_attr_t attr;
+t_data data;
+
+if(argc <= 2){
+	printf("usage: more than 2 input integer\n");
+	exit(0);
+}
+
+int snd_msg = 0;
+int rcv_msg = 0;
+int snd_key = atoi(argv[1]);
+int rcv_key = atoi(argv[2]);
+printf("snd_key = %d, rcv_key =  %d\n", snd_key, rcv_key);
+
+
+if( -1 == (snd_msg = msgget((key_t)snd_key, IPC_CREAT | 0666))){
+	perror("msgget() failn\n");
+	exit(1);
+}
+
+if( -1 == (rcv_msg = msgget((key_t)rcv_key, IPC_CREAT | 0666))){
+	perror("msgget() failn\n");
+	exit(1);
+}
+
+pthread_attr_init(&attr);
+pthread_create(&tid, &attr, receiver, &rcv_msg);
+
+while(1){
+	printf("[msg to send]");
+	data.data_type = 1;
+	fgets(data.data_buff, BUFF_SIZE, stdin);
+	
+	trim(data.data_buff);	
+
+	if(strncmp(data.data_buff, "exit", 4) == 0){
+		repeat = 0;
+		break;
+	}
+	
+	if(-1 == msgsnd(snd_msg, &data, sizeof(t_data) - sizeof(long), 0)){
+		perror("msgsnd() fail");
+		exit(1);
+	}
+}
+
+
+pthread_join(tid, NULL);
+msgctl(snd_msg, IPC_RMID, 0);
+msgctl(rcv_msg, IPC_RMID, 0);
+
+return 0;
+}
+
+void* receiver(void *rcv_msg){
+t_data data;
+
+while(repeat != 0){
+	data.data_buff[0] = '\0';
+	int value =  msgrcv(*(int *)rcv_msg, &data, sizeof(t_data) - sizeof(long), 1, IPC_NOWAIT);
+
+	if(data.data_buff[0] != '\0')
+		printf("\n\t[incoming] \"%s\"\n",data.data_buff);	
+	usleep(1000);
+}
+
+pthread_exit(0);
+
+}
+
+
+
+void trim(char *str){
+int len = strlen(str);
+str[len - 1] = '\0';
+
+}
