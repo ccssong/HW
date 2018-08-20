@@ -1,0 +1,128 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+#include <malloc/malloc.h>
+#include <string.h>
+
+#define	MAX_LEN		1024
+
+typedef struct node *pNode;
+typedef struct node {
+	char data[MAX_LEN];
+	pNode link;
+}node;
+
+void delete(pNode head);
+void trim(char *data);
+void addtrim(char *data);
+pNode reverse(pNode head);
+void printNode(pNode head);
+pNode printFromInputFile(FILE *);
+void writeToOutputFile(FILE *, pNode);
+
+
+int main(int argc, char** argv) {
+	FILE *fp1, *fp2;
+	char file_name1[128], file_name2[128];
+	char line[MAX_LEN];
+
+	printf("input file name?\n");
+	scanf("%s", file_name1);
+	printf("output file name?\n");
+	scanf("%s", file_name2);
+
+	fp1 = fopen(file_name1, "r");
+	if (fp1 == NULL) {
+		printf("file open is not successful\n");
+		return -1;
+	}
+
+	pNode head = printFromInputFile(fp1);
+	//printNode(head);
+
+	pNode rHead = reverse(head);
+	//printNode(rHead);
+
+	fp2 = fopen(file_name2, "w");
+	if (fp2 == NULL) {
+		printf("file open is not successful\n");
+        return -1;
+	}
+
+	writeToOutputFile(fp2, rHead);
+
+	delete(head);
+	fclose(fp1);
+	fclose(fp2);
+
+	return 0;
+}
+
+pNode printFromInputFile(FILE *fp) {
+	pNode current = NULL;
+	pNode head = NULL;
+
+	while (!feof(fp)) {
+		pNode new_node = (pNode)malloc(sizeof(node));
+		fgets(new_node->data, MAX_LEN, fp);
+		trim(new_node->data);			//remove the newline
+		new_node->link = NULL;
+
+		if (current == NULL) {
+			current = new_node;
+			head = new_node;
+		}
+		else {
+			current->link = new_node;
+			current = new_node;
+		}
+
+	}
+
+	return head;
+}
+
+void writeToOutputFile(FILE *fp, pNode head) {
+	while (head != NULL) {
+		addtrim(head->data);				//add the newline
+		fprintf(fp, "%s", head->data);
+		head = head->link;
+	}
+}
+
+void trim(char *data){
+	int length = strlen(data);
+	data[length - 1] = '\0';
+}
+
+void addtrim(char *data) {
+	int length = strlen(data);
+	data[length - 1] = '\n';
+}
+
+void delete(pNode head) {
+	while(head != NULL) {
+		pNode temp = head;
+		head = head->link;
+		free(temp);
+	}
+}
+
+pNode reverse(pNode head) {
+	pNode prev = NULL;
+	pNode curr = head;
+	pNode next = NULL;
+
+	while (curr != NULL) {
+		next = curr->link;
+		curr->link = prev;
+		prev = curr;
+		curr = next;
+	}
+	head = prev;
+}
+
+void printNode(pNode head) {
+	for (; head != NULL; head = head->link)
+		printf("\t%s\n", head->data);
+}
