@@ -1,0 +1,237 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <string.h>
+#include <malloc.h>
+#include <stdlib.h>
+
+#define MAX 1024
+
+
+
+float ** add_matrix(float** a, int ah, int aw, float** b, int bh, int bw);
+float ** mul_matrix(float** a, int ah, int aw, float** b, int bh, int bw);
+float ** transpos_matrix(float** a, int ah, int aw);
+
+int main(int argc, char** argv) {
+	char op;
+	printf("What operation do you want? ('a', 'm', 't')\n");
+	scanf("%c", &op);
+
+	switch(op) {
+		case 'a':
+		{
+			printf("Input files names: \n");
+			char *fname = (char *)malloc(sizeof(char) * 20);
+			scanf("%s", fname);
+
+			FILE *fp = fopen(fname, "r");
+
+			int ah, aw, bh, bw;
+
+			fscanf(fp, "%d %d", &ah, &aw);
+
+			float **a = (float **)malloc(ah * sizeof(float *));
+			for (int i = 0; i < ah; i++)
+				a[i] = (float *)malloc(aw * sizeof(float));
+
+			for (int i = 0; i < ah; i++) {
+				for (int j = 0; j < aw; j++) {
+					fscanf(fp, "%f", &a[i][j]);
+				}
+			}
+
+			scanf("%s", fname);
+			fp = fopen(fname, "r");
+
+			fscanf(fp, "%d %d", &bh, &bw);
+			if (ah != bh || aw != bw) {
+				printf("This operation is invalid.rows or cols are not matched\n");
+				break;
+			}
+
+			float **b = (float **)malloc(ah * sizeof(float *));
+			for (int i = 0; i < bh; i++)
+				b[i] = (float *)malloc(bw * sizeof(float));
+
+			for (int i = 0; i < bh; i++) {
+				for (int j = 0; j < bw; j++) {
+					fscanf(fp, "%f", &b[i][j]);
+				}
+			}
+
+			a = add_matrix(a, ah, aw, b, bh, bw);
+		
+			printf("the output file names? \n");
+			scanf("%s", fname);
+			fp = fopen(fname, "w");
+			for (int i = 0; i < ah; i++) 
+				for (int j = 0; j < aw; j++) 
+					fprintf(fp, "%.1f ", a[i][j]);
+				
+
+			for (int i = 0; i < ah; i++)
+				free(a[i]);
+			free(a);
+
+			for (int i = 0; i < bh; i++)
+				free(b[i]);
+			free(b);
+
+			fclose(fp);
+			free(fname);
+				break;
+		}
+		case 'm': {
+			printf("Input files names: \n");
+			char *fname = (char *)malloc(sizeof(char) * 20);
+			scanf("%s", fname);
+
+			FILE *fp = fopen(fname, "r");
+
+			int ah, aw, bh, bw;
+
+			fscanf(fp, "%d %d", &ah, &aw);
+
+			float **a = (float **)malloc(ah * sizeof(float *));
+			for (int i = 0; i < ah; i++)
+				a[i] = (float *)malloc(aw * sizeof(float));
+
+			for (int i = 0; i < ah; i++) {
+				for (int j = 0; j < aw; j++) {
+					fscanf(fp, "%f", &a[i][j]);
+				}
+			}
+
+			scanf("%s", fname);
+			fp = fopen(fname, "r");
+
+			fscanf(fp, "%d %d", &bh, &bw);
+			if (aw != bh) {
+				printf("This operation is invalid. column of a and row of b is not matched\n");
+				break;
+			}
+
+			float **b = (float **)malloc(bh * sizeof(float *));
+			for (int i = 0; i < bh; i++)
+				b[i] = (float *)malloc(bw * sizeof(float));
+
+			for (int i = 0; i < bh; i++) {
+				for (int j = 0; j < bw; j++) {
+					fscanf(fp, "%f", &b[i][j]);
+				}
+			}
+
+			
+			float **output = mul_matrix(a, ah, aw, b, bh, bw);
+
+			printf("the output file names? \n");
+			scanf("%s", fname);
+			fp = fopen(fname, "w");
+			for (int i = 0; i < ah; i++)
+				for (int j = 0; j < bw; j++) 
+					fprintf(fp, "%.2f ", output[i][j]);
+			
+			for(int i = 0; i < ah; i++)
+				free(a[i]);
+			free(a);
+
+			for(int i = 0; i < bh; i++)
+				free(b[i]);
+			free(b);
+
+			for (int i = 0; i < ah; i++)
+				free(output[i]);
+			free(output);
+
+			free(fname);
+			fclose(fp);
+			break;
+		}
+		case 't': {
+			printf("Input files names: \n");
+			char *fname = (char *)malloc(sizeof(char) * 20);
+			scanf("%s", fname);
+
+			FILE *fp = fopen(fname, "r");
+
+			int ah, aw;
+			fscanf(fp, "%d %d", &ah, &aw);
+
+			float **a = (float **)malloc(sizeof(float) * ah);
+			for (int i = 0; i < ah; i++)
+				a[i] = (float *)malloc(sizeof(float)*aw);
+
+			for (int i = 0; i < ah; i++) {
+				for (int j = 0; j < aw; j++) {
+					fscanf(fp, "%f", &a[i][j]);
+				}
+			}
+
+			float **output = transpos_matrix(a, ah, aw);
+
+			printf("the output file names? \n");
+			scanf("%s", fname);
+			fp = fopen(fname, "w");
+			for (int i = 0; i < aw; i++)
+				for (int j = 0; j < ah; j++)
+					fprintf(fp, "%.1f ", output[i][j]);
+
+			for (int i = 0; i < ah; i++)
+				free(a[i]);
+			free(a);
+
+			for (int i = 0; i < aw; i++)
+				free(output[i]);
+			free(output);
+
+			free(fname);
+			fclose(fp);
+			break;
+		}
+		default:
+			break;
+
+	}
+
+	return 0;
+}
+
+float ** add_matrix(float** a, int ah, int aw, float** b, int bh, int bw) {
+	for (int i = 0; i < ah; i++) {
+		for (int j = 0; j < aw; j++) {
+			a[i][j] = a[i][j] + b[i][j];
+		}
+	}
+
+	return a;
+}
+
+float ** mul_matrix(float** a, int ah, int aw, float** b, int bh, int bw) {
+	float **output = (float **)malloc(sizeof(float) * ah);
+	for (int i = 0; i < ah; i++)
+		output[i] = (float *)malloc(sizeof(float) * bw);
+
+	for (int i = 0; i < ah; i++) {
+		for (int j = 0; j < bw; j++) {
+			for (int k = 0; k < aw; k++) {
+				output[i][j] = a[i][k] * b[k][j];
+			}
+		}
+	}
+
+	return output;
+}
+
+float ** transpos_matrix(float **a, int ah, int aw) {
+	float **output = (float **)malloc(sizeof(float) * aw);
+	for (int i = 0; i < aw; i++)
+		output[i] = (float *)malloc(sizeof(float) * ah);
+
+	for (int i = 0; i < aw; i++) {
+		for (int j = 0; j < ah; j++) {
+			output[i][j] = a[j][i];
+		}
+	}
+
+	return output;
+}
