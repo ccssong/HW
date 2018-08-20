@@ -1,0 +1,129 @@
+// dshw5 21500747 최은송
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX 2048
+
+typedef struct wordCnt *pWordCnt;
+typedef struct wordCnt{
+    char word[MAX];
+    int count;
+}wordCnt;
+
+void MakeUpperCase(char *string);
+void quickSort(wordCnt array[], int left, int right);
+void swap(wordCnt *a, wordCnt *b);
+void alphOrderSort(wordCnt array[], int count);
+
+int main(int argc, char **argv){
+    FILE *fp;
+    wordCnt wArray[100];                    //array for storing result
+    char wList[MAX][MAX];                   //processed array storing every word
+    int arrcnt = 0;
+    int wnct = 0;
+
+    fp = fopen("/Users/eunsong/Documents/Semester6/DS/과제/hw5/input.txt", "r");
+    if(fp == NULL){
+        return -1;
+    }
+
+
+    while(!feof(fp)){
+        char str[MAX];
+        char *ptr;
+
+        fgets(str, sizeof(str), fp);
+        printf("%s",str);
+
+        //trim '.', '/n'
+        if(str[strlen(str) - 1] == '\n')
+            str[strlen(str) - 1] = 0;
+        if(str[strlen(str) - 1] == '.')
+            str[strlen(str) - 1] = 0;
+
+        //split string into word
+        ptr = strtok(str, " ");
+        while(ptr != NULL){
+            MakeUpperCase(ptr);
+            strncpy(wList[wnct++], ptr, strlen(ptr));
+            ptr = strtok(NULL, " ");
+        }
+
+    }
+
+    //counting word and store in wArray with count
+    for(int i = 0; i < wnct; i++){
+        if(wList[i][0] != '\0'){
+            strncpy(wArray[arrcnt].word, wList[i], strlen(wList[i]));
+            int count = 1;
+            for(int j = i + 1; j < wnct; j++){
+                if(!strcmp(wList[i], wList[j])){
+                    count++;
+                    wList[j][0] = 0;
+                }
+            }
+            wArray[arrcnt++].count = count;
+        }
+
+    }
+    printf("\n\n\n");
+
+    //quicksort. alphabetical ordering
+    quickSort(wArray, 0, arrcnt);
+    alphOrderSort(wArray, arrcnt);
+
+    for(int i = 0; i < 5; i++)
+        printf("%s:  %d\n", wArray[i].word, wArray[i].count);
+
+    fclose(fp);
+    return 0;
+}
+
+
+void MakeUpperCase(char *string){
+    for(int i = 0; i < strlen(string); i++){
+        char temp = toupper(string[i]);
+        string[i] = temp;
+    }
+}
+
+
+void quickSort(wordCnt *array, int left, int right){
+    int pivot, i, j;
+    if(left < right){
+        i = left;
+        j = right + 1;
+        pivot = array[left].count;
+        do{
+            do i++; while(array[i].count > pivot);
+            do j--; while(array[j].count < pivot);
+            if(i < j)
+                swap(&array[i], &array[j]);
+        }while(i < j);
+        swap(&array[left], &array[j]);
+
+        quickSort(array, left, j - 1);
+        quickSort(array, j + 1, right);
+    }
+}
+
+void alphOrderSort(wordCnt array[], int count){
+    for(int i = 0; i < count - 1; i++){
+        for(int j = i + 1; j < count; j++){
+            if(array[i].count != array[j].count)
+                break;
+            if(strcmp(array[i].word, array[j].word) > 0)
+                swap(&array[i], &array[j]);
+        }
+    }
+}
+
+void swap(wordCnt *a, wordCnt *b){
+    wordCnt temp = *a;
+    *a = *b;
+    *b = temp;
+}
