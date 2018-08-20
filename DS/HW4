@@ -1,0 +1,169 @@
+//
+//  main.c
+//  DSHW4
+//
+//  Created by eunsong on 2018. 5. 11..
+//  Copyright © 2018년 eunsong. All rights reserved.
+//
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <malloc/malloc.h>
+
+#define MAX 128
+
+
+typedef struct node *pNode;
+typedef struct node{
+    int key;
+    char value[MAX];
+    pNode left_child, right_child;
+}node;
+
+pNode insert(pNode tree, int key, char* value);
+pNode delete(pNode tree, int key);
+void printInorder(pNode tree);
+void delAll(pNode tree);
+pNode findMinValue(pNode tree);
+
+int main(int argc, const char * argv[]) {
+    pNode tree = NULL;
+    
+    char str[1024];
+    char command = 0;
+    int key = 0;
+    char value[MAX];
+    
+    do{
+        fgets(str, sizeof(str), stdin);
+        str[sizeof(str) - 1] = '\0';
+        int num = sscanf(str, "%c %d %s", &command, &key, value);
+        
+        switch (command){
+            case 'a' :
+                tree = insert(tree, key, value);
+                break;
+            case 'd':
+                tree = delete(tree, key);
+                break;
+            case 'p':
+                printInorder(tree);
+                break;
+            case 'q':
+                break;
+            default:
+                break;
+        }
+        key = 0;
+        value[0] = '\0';
+        str[0] = '\0';
+    }while(command != 'q');
+    
+    delAll(tree);
+    return 0;
+}
+
+
+pNode insert(pNode tree, int key, char * value){
+    if(tree == NULL){
+        pNode temp = (pNode)malloc(sizeof(node));
+        
+        temp -> key = key;
+        strncpy(temp->value, value, sizeof(tree->value));
+        temp -> value[sizeof(tree->value) - 1] = '\0';
+        
+        temp -> left_child = NULL;
+        temp -> right_child = NULL;
+        tree = temp;
+        return tree;
+    }
+    else{
+        if(tree -> key == key){
+            printf("\tThe key is already existed.\n");
+            return tree;
+        }
+        else if(key < tree -> key){
+            tree -> left_child = insert(tree -> left_child, key, value);
+        }
+        else if(key > tree -> key){
+            tree -> right_child = insert(tree -> right_child, key, value);
+        }
+    }
+    return tree;
+}
+
+
+pNode delete(pNode tree, int key){
+    if(tree == NULL){
+        printf("\tThere are no identical key. Enter another key\n");
+        return tree;
+    }
+    
+    // if key to be deleted is smaller than tree's key
+    if(key < tree -> key){
+        tree -> left_child = delete(tree -> left_child, key);
+    }
+    
+    // if key to be deleted is larger than tree's key
+    else if(key > tree -> key){
+        tree -> right_child = delete(tree -> right_child, key);
+    }
+    
+    // if key to be deleted is same with tree's key
+    else if(key == tree -> key){
+        // node with only child or no child
+        if(tree -> left_child == NULL){
+            pNode temp = tree -> right_child;
+            free(tree);
+            return temp;
+        }
+        else if(tree -> right_child == NULL){
+            pNode temp = tree -> left_child;
+            free(tree);
+            return temp;
+        }
+        
+        // node with both children : get the successor(smallest in the right subtree)
+        pNode successor = findMinValue(tree -> right_child);
+        
+        // copy the successor to the node
+        tree -> key = successor -> key;
+        tree -> value[0] = '\0';
+        strncpy(tree -> value, successor -> value, sizeof(successor -> value));
+        tree -> value[sizeof(tree -> value) - 1] = '\0';
+        
+        //delete the successor
+        tree -> right_child = delete(tree -> right_child, key);
+    }
+    
+    return tree;
+}
+
+// free all the node in tree
+void delAll(pNode tree){
+    if(tree != NULL){
+        delAll(tree -> left_child);
+        delAll(tree -> right_child);
+        free(tree);
+    }
+}
+
+void printInorder(pNode tree){
+    if(tree != NULL){
+        printInorder(tree -> left_child);
+        printf("\tkey: %d   value: %s\n", tree -> key, tree -> value);
+        printInorder(tree -> right_child);
+    }
+}
+
+
+// find the smallest value in the tree
+pNode findMinValue(pNode tree){
+    pNode current = tree;
+    while(current != NULL){
+        current = current -> left_child;
+    }
+    return current;
+}
+
