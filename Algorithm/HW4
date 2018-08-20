@@ -1,0 +1,201 @@
+#pragma warning(disable: 4996)
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <malloc.h>
+
+#define MAX_LEN 1024
+#define NUM 7
+
+int visited[NUM];
+int time = 0;
+int SCC[NUM][NUM];
+int m = 0, n = 0;
+
+typedef struct Time {
+	int index;
+	int discv_time;
+	int finish_time;
+}Time;
+Time timeArray[NUM];
+
+
+void DFS(int **Adj, int index);
+void sortTimeArray();
+void transGraph(int **Adj);
+void clearSCC();
+
+int main(int argc, char** argv) {
+	printf("21500747 Choi Eunsong hw5");
+	//file open
+	FILE *fp;
+	char file_name[128] = "hw4.data";
+
+	fp = fopen(file_name, "r");
+	if (fp == NULL) {
+		printf("file open is not successful\n");
+		return -1;
+	}
+
+
+	//step 1. put matrix in adjacency list
+	printf("\n\nStep 1. <Graph adjacency list>\n");
+	int **Adj = (int **)malloc(NUM * sizeof(int *));
+	for (int i = 0; i < NUM; i++)
+		Adj[i] = (int *)malloc(MAX_LEN * sizeof(int));
+
+	char blank[MAX_LEN];
+	char line[NUM][MAX_LEN];
+
+	fgets(blank, MAX_LEN, fp);
+	for (int i = 0; i < NUM; i++) {
+		fgets(line[i], MAX_LEN, fp);
+	}
+
+	char *null;
+	char *temp;
+	char token[MAX_LEN] = "\t\n";
+	for (int i = 0; i < NUM; i++) {
+		null = strtok(line[i], token);
+		printf("%c => \t", i + 65);
+		for (int j = 0; j < NUM; j++) {
+			temp = strtok(NULL, token);
+			Adj[i][j] = atoi(temp);
+			printf("%d\t", Adj[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+
+
+	//step 2. find discovery time, finish time
+	printf("\n\nStep 2. <Graph discovery time, finish timet>\n");
+	for (int i = 0; i < NUM; i++) {
+		visited[i] = 0;
+		timeArray[i].index = i;
+	}
+	
+	for (int i = 0; i < NUM; i++) {
+		if (visited[i] == 0){
+			n = 0;
+			DFS(Adj, i);
+			m++;
+		}
+	}
+
+	for (int i = 0; i < NUM; i++) {
+		printf("elemtent %c: discovery time: %d		finish time:%d\n",
+			i + 65, 
+			timeArray[i].discv_time,
+			timeArray[i].finish_time);
+	}
+
+
+	//step 3. find transposed graph
+	printf("\n\nStep 3. <transposed Graph adjacency list>\n");
+	transGraph(Adj);
+	for (int i = 0; i < NUM; i++) {
+		printf("%c => \t", i + 65);
+		for (int j = 0; j < NUM; j++)
+			printf("%d	", Adj[i][j]);
+		printf("\n");
+	}
+
+
+	//step 4. find discovery time, finish time of transpoed graph
+	for(int i = 0; i < NUM; i++)
+		visited[i] = 0;
+
+	sortTimeArray();
+	time = 0;
+	m = 0, n = 0;
+	clearSCC();
+
+	for (int i = 0; i < NUM; i++) {
+		int idx = timeArray[i].index;
+		if (visited[idx] == 0) {
+			n = 0;
+			DFS(Adj, idx);
+			m++;
+		}
+	}
+
+	printf("\n\nStep 4. <transposed graph discovery time, finish time>\n");
+	for (int i = 0; i < NUM; i++) {
+		printf("elemtent %c: discovery time: %d		finish time:%d\n",
+			i + 65,
+			timeArray[i].discv_time,
+			timeArray[i].finish_time);
+	}
+
+
+	//step 5. SCC result
+	printf("\n\nStep 5. <SCC result>\n");
+	for (int i = 0; i < m; i++) {
+		printf("SCC %d:		vertex ", i);
+		for (int j = 0; j < NUM; j++) {
+			if (SCC[i][j] == '\n')
+				break;
+			printf("%c, ", SCC[i][j] + 65);
+		}
+		printf("\n");
+	}
+	
+
+	for (int i = 0; i < NUM; i++)
+		free(Adj[i]);
+	free(Adj);
+
+	fclose(fp);
+	return 0;
+}
+
+
+void DFS(int **Adj, int index) {
+	visited[index] = 1;
+	timeArray[index].discv_time = ++time;
+
+	for(int i = 0; i < NUM; i++){
+		if (visited[i] == 0 && Adj[index][i] == 1) {
+			DFS(Adj, i, time);
+		}
+	}
+	timeArray[index].finish_time = ++time;
+	SCC[m][n++] = index;
+}
+
+
+void sortTimeArray() {
+	for (int i = 0; i < NUM; ++i) {
+		for (int j = i + 1; j < NUM; ++j) {
+			if (timeArray[i].finish_time < timeArray[j].finish_time) {
+				Time temp = timeArray[i];
+				timeArray[i] = timeArray[j];
+				timeArray[j] = temp;
+			}
+		}
+	}
+}
+
+
+void transGraph(int **Adj) {
+	int temp[NUM][NUM];
+
+	for (int i = 0; i < NUM; i++) {
+		for (int j = 0; j < NUM; j++) {
+			temp[i][j] = Adj[i][j];
+		}
+	}
+
+	for (int i = 0; i < NUM; i++) {
+		for (int j = 0; j < NUM; j++) {
+			Adj[i][j] = temp[j][i];
+		}
+	}
+}
+
+void clearSCC() {
+	for (int i = 0; i <= NUM; i++)
+		for(int j = 0; j <= NUM; j++)
+			SCC[i][j] = '\n';
+}
