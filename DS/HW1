@@ -1,0 +1,29 @@
+#include <stdio.h>
+#include <string.h>
+
+#define max_len 1024
+
+int main(int argc, char** argv) {
+	char line[max_len];
+	char *ptr;
+
+	while (fgets(line, max_len, stdin)) {
+		printf("=> %s", line);
+		size_t length = strlen(line);
+
+		char temp = null;
+		ptr = line;
+		for (int i = 0; i < length - 1; i++, ptr++) {
+			if ((*ptr) >= 'a' && (*ptr) <= 'z')
+				temp = (*ptr) - 32;
+			else if ((*ptr) >= 'a' && (*ptr) <= 'z')
+				temp = (*ptr) + 32;
+			else
+				temp = *ptr;
+			*ptr = temp;
+		}
+		printf("=> %s", line);
+	}
+
+	return 0;
+}
